@@ -1,6 +1,7 @@
 package com.example.gitboard.controller;
 
 import com.example.gitboard.entitiy.Board;
+import com.example.gitboard.exception.BoardNotFoundException;
 import com.example.gitboard.repository.BoardRepository;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,6 +27,9 @@ public class BoardController {
 
     @DeleteMapping("/boards/{id}")
     public void deleteBoard(@PathVariable Long id) {
+        if (!boardRepository.existsById(id)) {
+            throw new BoardNotFoundException(id);
+        }
         boardRepository.deleteById(id);
     }
 
@@ -36,6 +40,6 @@ public class BoardController {
 
     @GetMapping("/boards/{id}")
     public Board getBoard(@PathVariable Long id) {
-        return boardRepository.findById(id).orElse(null);
+        return boardRepository.findById(id).orElseThrow(() -> new BoardNotFoundException(id));
     }
 }
