@@ -28,4 +28,9 @@ public class BoardController {
     public void deleteBoard(@PathVariable Long id) {
         boardRepository.deleteById(id);
     }
+
+    @PutMapping("/boards/{id}")
+    public Board updateBoard(@PathVariable Long id, @RequestBody Board board) {
+        return boardRepository.save(board);
+    }
 }
