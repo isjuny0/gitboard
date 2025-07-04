@@ -33,4 +33,9 @@ public class BoardController {
     public Board updateBoard(@PathVariable Long id, @RequestBody Board board) {
         return boardRepository.save(board);
     }
+
+    @GetMapping("/boards/{id}")
+    public Board getBoard(@PathVariable Long id) {
+        return boardRepository.findById(id).orElse(null);
+    }
 }
