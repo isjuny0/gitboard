@@ -23,4 +23,9 @@ public class BoardController {
     public List<Board> getAllBoards() {
         return boardRepository.findAll();
     }
+
+    @DeleteMapping("/boards/{id}")
+    public void deleteBoard(@PathVariable Long id) {
+        boardRepository.deleteById(id);
+    }
 }
