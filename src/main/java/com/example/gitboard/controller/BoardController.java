@@ -1,10 +1,12 @@
 package com.example.gitboard.controller;
 
-import com.example.gitboard.entitiy.Board;
+import com.example.gitboard.dto.BoardRequestDto;
+import com.example.gitboard.entity.Board;
 import com.example.gitboard.exception.BoardNotFoundException;
 import com.example.gitboard.repository.BoardRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,7 +20,10 @@ public class BoardController {
 
     @Operation(summary = "게시글 등록", description = "새로운 게시글을 등록합니다.")
     @PostMapping("/boards")
-    public Board createBoard(@RequestBody Board board) {
+    public Board createBoard(@RequestBody @Valid BoardRequestDto requestDto) {
+        Board board = new Board();
+        board.setTitle(requestDto.getTitle());
+        board.setContent(requestDto.getContent());
         return boardRepository.save(board);
     }
 
@@ -39,7 +44,10 @@ public class BoardController {
 
     @Operation(summary = "게시글 업데이트", description = "게시글을 업데이트합니다.")
     @PutMapping("/boards/{id}")
-    public Board updateBoard(@PathVariable Long id, @RequestBody Board board) {
+    public Board updateBoard(@PathVariable Long id, @RequestBody @Valid BoardRequestDto requestDto) {
+        Board board = boardRepository.findById(id).orElseThrow(() -> new BoardNotFoundException(id));
+        board.setTitle(requestDto.getTitle());
+        board.setContent(requestDto.getContent());
         return boardRepository.save(board);
     }
 
