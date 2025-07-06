@@ -17,22 +17,29 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BoardNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public Map<String, Object> handleBoardNotFound(BoardNotFoundException e) {
-        Map<String, Object> error = new LinkedHashMap<>();
-        error.put("error", "Not Found");
-        error.put("message", e.getMessage());
-        error.put("timestamp", LocalDateTime.now());
-        return error;
+    public ResponseEntity<Map<String, Object>> handleBoardNotFound(BoardNotFoundException e) {
+        Map<String, Object> errorResponse = new LinkedHashMap<>();
+        errorResponse.put("status", HttpStatus.NOT_FOUND.value());
+        errorResponse.put("message", e.getMessage());
+        errorResponse.put("timestamp", LocalDateTime.now());
+        errorResponse.put("errors", null);
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationErrors(MethodArgumentNotValidException e) {
-        Map<String, String> errors = new HashMap<>();
-
+    public ResponseEntity<Map<String, Object>> handleValidationErrors(MethodArgumentNotValidException e) {
+        Map<String, String> fieldErrors = new HashMap<>();
         e.getBindingResult().getFieldErrors().forEach(fieldError -> {
-            errors.put(fieldError.getField(), fieldError.getDefaultMessage());
+            fieldErrors.put(fieldError.getField(), fieldError.getDefaultMessage());
         });
 
-        return ResponseEntity.badRequest().body(errors);
+        Map<String, Object> errorResponse = new LinkedHashMap<>();
+        errorResponse.put("status", 400);
+        errorResponse.put("message", "유효성 검사 실패");
+        errorResponse.put("errors", fieldErrors);
+        errorResponse.put("timestamp", LocalDateTime.now());
+
+        return ResponseEntity.badRequest().body(errorResponse);
     }
 }
