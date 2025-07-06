@@ -4,6 +4,7 @@ import com.example.gitboard.dto.BoardRequestDto;
 import com.example.gitboard.entity.Board;
 import com.example.gitboard.exception.BoardNotFoundException;
 import com.example.gitboard.repository.BoardRepository;
+import com.example.gitboard.service.BoardService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -16,44 +17,35 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 public class BoardController {
-    private final BoardRepository boardRepository;
+    private final BoardService boardService;
 
     @Operation(summary = "게시글 등록", description = "새로운 게시글을 등록합니다.")
     @PostMapping("/boards")
     public Board createBoard(@RequestBody @Valid BoardRequestDto requestDto) {
-        Board board = new Board();
-        board.setTitle(requestDto.getTitle());
-        board.setContent(requestDto.getContent());
-        return boardRepository.save(board);
+        return boardService.create(requestDto);
     }
 
     @Operation(summary = "게시글 목록 조회", description = "전체 게시글을 조회합니다.")
     @GetMapping("/boards")
     public List<Board> getAllBoards() {
-        return boardRepository.findAll();
+        return boardService.findAll();
     }
 
     @Operation(summary = "게시글 삭제", description = "게시글을 삭제합니다.")
     @DeleteMapping("/boards/{id}")
     public void deleteBoard(@PathVariable Long id) {
-        if (!boardRepository.existsById(id)) {
-            throw new BoardNotFoundException(id);
-        }
-        boardRepository.deleteById(id);
+        boardService.delete(id);
     }
 
     @Operation(summary = "게시글 업데이트", description = "게시글을 업데이트합니다.")
     @PutMapping("/boards/{id}")
     public Board updateBoard(@PathVariable Long id, @RequestBody @Valid BoardRequestDto requestDto) {
-        Board board = boardRepository.findById(id).orElseThrow(() -> new BoardNotFoundException(id));
-        board.setTitle(requestDto.getTitle());
-        board.setContent(requestDto.getContent());
-        return boardRepository.save(board);
+        return boardService.update(id, requestDto);
     }
 
     @Operation(summary = "단일 게시글 조회", description = "단일 게시글을 조회합니다.")
     @GetMapping("/boards/{id}")
     public Board getBoard(@PathVariable Long id) {
-        return boardRepository.findById(id).orElseThrow(() -> new BoardNotFoundException(id));
+        return boardService.findById(id);
     }
 }
