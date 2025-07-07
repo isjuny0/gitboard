@@ -4,6 +4,7 @@ import com.example.gitboard.dto.BoardRequestDto;
 import com.example.gitboard.dto.BoardResponseDto;
 import com.example.gitboard.entity.Board;
 import com.example.gitboard.repository.BoardRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +29,11 @@ public class BoardIntegrationTest {
 
     @Autowired
     BoardRepository boardRepository;
+
+    @BeforeEach
+    void clear() {
+        boardRepository.deleteAll();
+    }
 
     @Test
     @DisplayName("게시글 생성 후 전체 목록 조회 통합 테스트")
@@ -58,44 +64,6 @@ public class BoardIntegrationTest {
                 .extracting("title")
                 .contains("통합 테스트 제목");
 
-    }
-
-    @Test
-    @DisplayName("게시글 단건 조회")
-    void getBoardById() {
-        // given
-        Board saved = boardRepository.save(new Board(null, "조회 제목", "조회 내용"));
-
-        String url = "http://localhost:" + port + "/boards/" + saved.getId();
-
-        // when
-        ResponseEntity<Board> response = restTemplate.getForEntity(url, Board.class);
-
-        // then
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody().getTitle()).isEqualTo("조회 제목");
-    }
-
-    @Test
-    @DisplayName("게시글 수정 통합 테스트")
-    void updateBoard() {
-        // given
-        Board saved = boardRepository.save(new Board(null, "원래 제목", "원래 내용"));
-        BoardRequestDto requestDto = new BoardRequestDto();
-        requestDto.setTitle("수정된 제목");
-        requestDto.setContent("수정된 내용");
-
-        String url = "http://localhost:" + port + "/boards/" + saved.getId();
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<BoardRequestDto> request = new HttpEntity<>(requestDto, headers);
-
-        // when
-        ResponseEntity<Board> response = restTemplate.exchange(url, HttpMethod.PUT, request, Board.class);
-
-        // then
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody().getTitle()).isEqualTo("수정된 제목");
     }
 
     @Test
@@ -186,5 +154,37 @@ public class BoardIntegrationTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).hasSize(2);
         assertThat(response.getBody()[0].getTitle()).isEqualTo("제목1");
+    }
+
+    @Test
+    @DisplayName("게시글 단건 조회 - DTO 응답")
+    void getBoardById() {
+        Board saved = boardRepository.save(new Board(null, "조회 제목", "조회 내용"));
+        String url = "http://localhost:" + port + "/boards/" + saved.getId();
+
+        ResponseEntity<BoardResponseDto> response = restTemplate.getForEntity(url, BoardResponseDto.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getTitle()).isEqualTo("조회 제목");
+    }
+
+    @Test
+    @DisplayName("게시글 수정 통합 테스트 - DTO 응답")
+    void updateBoard() {
+        Board saved = boardRepository.save(new Board(null, "원래 제목", "원래 내용"));
+        BoardRequestDto dto = new BoardRequestDto();
+        dto.setTitle("수정된 제목");
+        dto.setContent("수정된 내용");
+
+        String url = "http://localhost:" + port + "/boards/" + saved.getId();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<BoardRequestDto> request = new HttpEntity<>(dto, headers);
+
+        ResponseEntity<BoardResponseDto> response = restTemplate.exchange(url, HttpMethod.PUT, request, BoardResponseDto.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().getTitle()).isEqualTo("수정된 제목");
     }
 }
