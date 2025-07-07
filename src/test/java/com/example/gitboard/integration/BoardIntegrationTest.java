@@ -1,6 +1,7 @@
 package com.example.gitboard.integration;
 
 import com.example.gitboard.dto.BoardRequestDto;
+import com.example.gitboard.dto.BoardResponseDto;
 import com.example.gitboard.entity.Board;
 import com.example.gitboard.repository.BoardRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -143,5 +144,47 @@ public class BoardIntegrationTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody()).contains("제목은 필수입니다.");
         assertThat(response.getBody()).contains("내용은 필수입니다.");
+    }
+
+    @Test
+    @DisplayName("게시글 등록 시 응답 DTO 검증")
+    void createBoard_responseDtoCheck() {
+        // given
+        BoardRequestDto dto = new BoardRequestDto();
+        dto.setTitle("DTO 테스트 제목");
+        dto.setContent("DTO 테스트 내용");
+
+        String url = "http://localhost:" + port + "/boards";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<BoardRequestDto> request = new HttpEntity<>(dto, headers);
+
+        // when
+        ResponseEntity<BoardResponseDto> response = restTemplate.postForEntity(
+                url, request, BoardResponseDto.class);
+
+        // then
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        BoardResponseDto body = response.getBody();
+        assertThat(body).isNotNull();
+        assertThat(body.getTitle()).isEqualTo("DTO 테스트 제목");
+        assertThat(body.getContent()).isEqualTo("DTO 테스트 내용");
+    }
+
+    @Test
+    @DisplayName("전체 게시글 조회 시 응답 DTO 배열 확인")
+    void getBoards_responseDtoListCheck() {
+        boardRepository.save(new Board(null, "제목1", "내용1"));
+        boardRepository.save(new Board(null, "제목2", "내용2"));
+
+        String url = "http://localhost:" + port + "/boards";
+
+        ResponseEntity<BoardResponseDto[]> response = restTemplate.getForEntity(url, BoardResponseDto[].class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).hasSize(2);
+        assertThat(response.getBody()[0].getTitle()).isEqualTo("제목1");
     }
 }
