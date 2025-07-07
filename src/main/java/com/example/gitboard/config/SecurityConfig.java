@@ -29,7 +29,8 @@ public class SecurityConfig {
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
-                .formLogin().and()
+                .formLogin()
+                .and()
                 .httpBasic();
 
         http.headers().frameOptions().disable(); // H2 콘솔용
