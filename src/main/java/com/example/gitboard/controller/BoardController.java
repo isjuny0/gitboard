@@ -2,14 +2,14 @@ package com.example.gitboard.controller;
 
 import com.example.gitboard.dto.BoardRequestDto;
 import com.example.gitboard.dto.BoardResponseDto;
-import com.example.gitboard.entity.Board;
-import com.example.gitboard.exception.BoardNotFoundException;
-import com.example.gitboard.repository.BoardRepository;
+import com.example.gitboard.security.UserDetailsImpl;
 import com.example.gitboard.service.BoardService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,8 +23,12 @@ public class BoardController {
 
     @Operation(summary = "게시글 등록", description = "새로운 게시글을 등록합니다.")
     @PostMapping
-    public BoardResponseDto createBoard(@RequestBody @Valid BoardRequestDto requestDto) {
-        return boardService.create(requestDto);
+    public ResponseEntity<BoardResponseDto> createBoard(@RequestBody @Valid BoardRequestDto requestDto,
+                                        @AuthenticationPrincipal UserDetailsImpl userDetails
+    ) {
+        String username = userDetails.getUsername();
+        BoardResponseDto responseDto = boardService.create(requestDto, username);
+        return ResponseEntity.ok(responseDto);
     }
 
     @Operation(summary = "게시글 목록 조회", description = "전체 게시글을 조회합니다.")

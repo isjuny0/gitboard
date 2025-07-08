@@ -17,7 +17,8 @@ public class BoardMapper {
         return new BoardResponseDto(
                 board.getId(),
                 board.getTitle(),
-                board.getContent()
+                board.getContent(),
+                board.getUsername()
         );
     }
 }
