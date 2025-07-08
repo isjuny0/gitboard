@@ -25,13 +25,12 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/h2-console/**",
+                                "/swagger-resources/**",
                                 "/signup"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
-                .formLogin()
-                .and()
-                .httpBasic();
+                .formLogin();
 
         http.headers().frameOptions().disable(); // H2 콘솔용
         return http.build();
