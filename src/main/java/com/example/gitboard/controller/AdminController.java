@@ -21,7 +21,7 @@ public class AdminController {
     public String deleteAllBoards(@AuthenticationPrincipal UserDetails userDetails) {
         // 관리자 확인은 Security 설정으로 이미 제한됨
         boardRepository.deleteAll();
-        return "모든 게시글이 삭제되었습니다."
+        return "모든 게시글이 삭제되었습니다.";
     }
 
 }
