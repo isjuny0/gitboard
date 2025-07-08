@@ -2,6 +2,7 @@ package com.example.gitboard.controller;
 
 import com.example.gitboard.dto.BoardRequestDto;
 import com.example.gitboard.dto.BoardResponseDto;
+import com.example.gitboard.entity.User;
 import com.example.gitboard.security.UserDetailsImpl;
 import com.example.gitboard.service.BoardService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,8 +27,8 @@ public class BoardController {
     public ResponseEntity<BoardResponseDto> createBoard(@RequestBody @Valid BoardRequestDto requestDto,
                                         @AuthenticationPrincipal UserDetailsImpl userDetails
     ) {
-        String username = userDetails.getUsername();
-        BoardResponseDto responseDto = boardService.create(requestDto, username);
+        User user = userDetails.getUser();
+        BoardResponseDto responseDto = boardService.create(requestDto, user);
         return ResponseEntity.ok(responseDto);
     }
 
