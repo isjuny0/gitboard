@@ -6,6 +6,7 @@ import com.example.gitboard.entity.User;
 import com.example.gitboard.security.UserDetailsImpl;
 import com.example.gitboard.service.BoardService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@SecurityRequirement(name = "basicAuth")
 @Tag(name = "게시판 API", description = "게시글 등록, 조회, 삭제 등 처리")
 @RestController
 @RequiredArgsConstructor
@@ -40,14 +42,16 @@ public class BoardController {
 
     @Operation(summary = "게시글 삭제", description = "게시글을 삭제합니다.")
     @DeleteMapping("/{id}")
-    public void deleteBoard(@PathVariable Long id) {
-        boardService.delete(id);
+    public void deleteBoard(@PathVariable Long id, @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        boardService.delete(id, userDetails.getUser());
     }
 
     @Operation(summary = "게시글 업데이트", description = "게시글을 업데이트합니다.")
     @PutMapping("/{id}")
-    public BoardResponseDto updateBoard(@PathVariable Long id, @RequestBody @Valid BoardRequestDto requestDto) {
-        return boardService.update(id, requestDto);
+    public BoardResponseDto updateBoard(@PathVariable Long id,
+                                        @RequestBody @Valid BoardRequestDto requestDto,
+                                        @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        return boardService.update(id, requestDto, userDetails.getUser());
     }
 
     @Operation(summary = "단일 게시글 조회", description = "단일 게시글을 조회합니다.")
