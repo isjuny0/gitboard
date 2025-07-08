@@ -3,10 +3,12 @@ package com.example.gitboard.security;
 import com.example.gitboard.entity.User;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 @Getter
 public class UserDetailsImpl implements UserDetails {
@@ -20,7 +22,7 @@ public class UserDetailsImpl implements UserDetails {
     // 사용자 권한 반환
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.emptyList(); // 지금은 권한 필요 없음
+        return List.of(new SimpleGrantedAuthority(user.getRole()));
     }
 
     @Override

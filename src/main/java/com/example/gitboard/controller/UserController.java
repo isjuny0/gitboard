@@ -21,7 +21,9 @@ public class UserController {
     @PostMapping("/signup")
     public String signup(@RequestBody @Valid SignupRequestDto requestDto) {
         String encodedPassword = passwordEncoder.encode(requestDto.getPassword());
-        User user = new User(requestDto.getUsername(), encodedPassword);
+        String role = "ROLE_" + requestDto.getRole().toUpperCase(); // ROLE_USER or ROLE_ADMIN
+
+        User user = new User(requestDto.getUsername(), encodedPassword, role);
         userRepository.save(user);
         return "회원가입 완료";
     }

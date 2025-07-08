@@ -20,6 +20,7 @@ public class SecurityConfig {
         http
                 .csrf().disable()
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers(
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
