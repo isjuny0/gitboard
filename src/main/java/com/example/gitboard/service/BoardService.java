@@ -3,6 +3,7 @@ package com.example.gitboard.service;
 import com.example.gitboard.dto.BoardRequestDto;
 import com.example.gitboard.dto.BoardResponseDto;
 import com.example.gitboard.entity.Board;
+import com.example.gitboard.entity.User;
 import com.example.gitboard.exception.BoardNotFoundException;
 import com.example.gitboard.mapper.BoardMapper;
 import com.example.gitboard.repository.BoardRepository;
@@ -17,9 +18,8 @@ import java.util.stream.Collectors;
 public class BoardService {
     private final BoardRepository boardRepository;
 
-    public BoardResponseDto create(BoardRequestDto requestDto, String username) {
-        Board board = BoardMapper.toEntity(requestDto);
-        board.setUsername(username);
+    public BoardResponseDto create(BoardRequestDto requestDto, User user) {
+        Board board = BoardMapper.toEntity(requestDto, user);
         return BoardMapper.toDto(boardRepository.save(board));
     }
 

@@ -33,6 +33,10 @@ public class UserDetailsImpl implements UserDetails {
         return user.getUsername();
     }
 
+    public User getUser() {
+        return user;
+    }
+
     // 계정 만료 여부 (true -> 사용 가능)
     @Override
     public boolean isAccountNonExpired() {
