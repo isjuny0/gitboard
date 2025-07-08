@@ -17,8 +17,9 @@ import java.util.stream.Collectors;
 public class BoardService {
     private final BoardRepository boardRepository;
 
-    public BoardResponseDto create(BoardRequestDto requestDto) {
+    public BoardResponseDto create(BoardRequestDto requestDto, String username) {
         Board board = BoardMapper.toEntity(requestDto);
+        board.setUsername(username);
         return BoardMapper.toDto(boardRepository.save(board));
     }
 
