@@ -1,12 +1,17 @@
 package com.example.gitboard.controller;
 
 import com.example.gitboard.dto.LoginRequestDto;
+import com.example.gitboard.dto.LoginResponseDto;
 import com.example.gitboard.entity.User;
 import com.example.gitboard.repository.UserRepository;
 import com.example.gitboard.security.JwtUtil;
+import com.example.gitboard.security.UserDetailsImpl;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,26 +20,23 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/auth")
 public class AuthController {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final AuthenticationManager authenticationManager;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody @Valid LoginRequestDto requestDto) {
-        User user = userRepository.findByUsername(requestDto.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+    public ResponseEntity<LoginResponseDto> login(@RequestBody @Valid LoginRequestDto requestDto) {
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(requestDto.getUsername(), requestDto.getPassword())
+        );
 
-        if (!passwordEncoder.matches(requestDto.getPassword(), user.getPassword())) {
-            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
-        }
-
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        User user = userDetails.getUser(); // ⬅️ 수정된 부분
         String token = jwtUtil.createToken(user.getUsername());
 
-        return ResponseEntity.ok()
-                .header("Authorization", "Bearer" + token)
-                .body("로그인 성공");
+        return ResponseEntity.ok(new LoginResponseDto(token));
     }
 }
