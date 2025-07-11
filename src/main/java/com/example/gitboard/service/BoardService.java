@@ -64,4 +64,8 @@ public class BoardService {
                 .map(BoardMapper::toDto)
                 .toList();
     }
+
+    public void deleteAllBoards() {
+        boardRepository.deleteAll();
+    }
 }
