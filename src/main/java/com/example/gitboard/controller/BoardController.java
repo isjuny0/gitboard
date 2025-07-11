@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@SecurityRequirement(name = "basicAuth")
+@SecurityRequirement(name = "bearerAuth")
 @Tag(name = "게시판 API", description = "게시글 등록, 조회, 삭제 등 처리")
 @RestController
 @RequiredArgsConstructor
@@ -60,7 +60,7 @@ public class BoardController {
         return boardService.findById(id);
     }
 
-    @Operation(summary = "내 게시글 조회", description = "현재 로그인한 사용자의 게시글을 조회합니다.")
+    @Operation(summary = "내 게시글 목록 조회", description = "로그인된 사용자가 작성한 게시글을 반환합니다.")
     @GetMapping("/my")
     public List<BoardResponseDto> getMyBoards(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();

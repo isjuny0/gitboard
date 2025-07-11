@@ -5,8 +5,6 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class UserProfileDto {
-    private Long id;
-    private String username;
-    private String role;
+public class LoginResponseDto {
+    private String token;
 }

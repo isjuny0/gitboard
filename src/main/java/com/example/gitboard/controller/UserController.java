@@ -1,40 +1,26 @@
 package com.example.gitboard.controller;
 
-import com.example.gitboard.dto.SignupRequestDto;
-import com.example.gitboard.dto.UserProfileDto;
+import com.example.gitboard.dto.UserResponseDto;
 import com.example.gitboard.entity.User;
-import com.example.gitboard.repository.UserRepository;
 import com.example.gitboard.security.UserDetailsImpl;
-import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+@SecurityRequirement(name = "basicAuth")
+@Tag(name = "회원 API", description = "회원 관련 기능 제공")
 @RestController
 @RequiredArgsConstructor
 public class UserController {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-
-    @PostMapping("/signup")
-    public String signup(@RequestBody @Valid SignupRequestDto requestDto) {
-        String encodedPassword = passwordEncoder.encode(requestDto.getPassword());
-        String role = "ROLE_" + requestDto.getRole().toUpperCase(); // ROLE_USER or ROLE_ADMIN
-
-        User user = new User(requestDto.getUsername(), encodedPassword, role);
-        userRepository.save(user);
-        return "회원가입 완료";
-    }
-
-    @GetMapping("/users/me")
-    public UserProfileDto getMyProfile(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+    @Operation(summary = "내 프로필 조회", description = "로그인된 사용자의 정보를 반환합니다.")
+    @GetMapping("/profile")
+    public UserResponseDto getProfile(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
-        return new UserProfileDto(user.getId(), user.getUsername(), user.getRole());
+        return new UserResponseDto(user);
     }
-
 }
