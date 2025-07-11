@@ -12,16 +12,32 @@ import java.util.Date;
 public class JwtUtil {
 
     private final Key key;
-    private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 24; // 24시간
+    private static final long ACCESS_TOKEN_EXPIRATION = 1000 * 60 * 60; // 1시간
+    private static final long REFRESH_TOKEN_EXPIRATION = 1000 * 60 * 60 * 24 * 7; // 7일
 
     public JwtUtil(@Value("${jwt.secret}") String secretKey) {
         this.key = Keys.hmacShaKeyFor(secretKey.getBytes());
     }
 
-    // 토큰 생성
+    // 만료 시간 반환(프론트 전달용)
+    public long getAccessTokenExpirationMs() {
+        return ACCESS_TOKEN_EXPIRATION;
+    }
+    public long getRefreshTokenExpirationMs() {
+        return REFRESH_TOKEN_EXPIRATION;
+    }
+
     public String createToken(String username) {
+        return generateToken(username, ACCESS_TOKEN_EXPIRATION);
+    }
+
+    public String createRefreshToken(String username) {
+        return generateToken(username, REFRESH_TOKEN_EXPIRATION);
+    }
+
+    private String generateToken(String username, long durationMs) {
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + EXPIRATION_TIME);
+        Date expiryDate = new Date(now.getTime() + durationMs);
 
         return Jwts.builder()
                 .setSubject(username)

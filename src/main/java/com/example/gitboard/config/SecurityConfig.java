@@ -52,7 +52,9 @@ public class SecurityConfig {
                                 "/h2-console/**",
                                 "/swagger-resources/**",
                                 "/signup",
-                                "/login"
+                                "/login",
+                                "logout",
+                                "refresh"
                         ).permitAll()
                         .anyRequest().authenticated()
                 ).addFilterBefore(new JwtAuthenticationFilter(jwtUtil, userDetailsService), UsernamePasswordAuthenticationFilter.class);
