@@ -59,7 +59,7 @@ public class BoardService {
         boardRepository.delete(board);
     }
 
-    public List<BoardResponseDto> findMyBoards(User user) {
+    public List<BoardResponseDto> findByUser(User user) {
         return boardRepository.findAllByUser(user).stream()
                 .map(BoardMapper::toDto)
                 .collect(Collectors.toList());

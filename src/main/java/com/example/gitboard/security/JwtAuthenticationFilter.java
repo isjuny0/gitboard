@@ -38,11 +38,17 @@ public class JwtAuthenticationFilter  extends OncePerRequestFilter {
         String token = resolveToken(request);
         if (token != null && jwtUtil.validateToken(token)) {
             String username = jwtUtil.getUsernameFromToken(token);
+            System.out.println("🔐 토큰에서 추출한 사용자명: " + username);
+
             UserDetailsImpl userDetails = (UserDetailsImpl) userDetailsService.loadUserByUsername(username);
+            System.out.println("✅ 인증 객체 생성 성공: " + userDetails.getUsername());
+
             UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
                     userDetails, null, userDetails.getAuthorities());
             auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(auth);
+
+            System.out.println("🔓 SecurityContext에 인증 객체 등록 완료");
         }
 
         filterChain.doFilter(request, response);

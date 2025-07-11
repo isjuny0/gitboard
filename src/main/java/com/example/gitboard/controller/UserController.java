@@ -30,11 +30,4 @@ public class UserController {
         userRepository.save(user);
         return "회원가입 완료";
     }
-
-    @GetMapping("/users/me")
-    public UserProfileDto getMyProfile(@AuthenticationPrincipal UserDetailsImpl userDetails) {
-        User user = userDetails.getUser();
-        return new UserProfileDto(user.getId(), user.getUsername(), user.getRole());
-    }
-
 }

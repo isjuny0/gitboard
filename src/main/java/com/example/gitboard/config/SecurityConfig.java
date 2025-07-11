@@ -54,6 +54,7 @@ public class SecurityConfig {
                         ).permitAll()
                         .anyRequest().authenticated()
                 ).addFilterBefore(new JwtAuthenticationFilter(jwtUtil, userDetailsService), UsernamePasswordAuthenticationFilter.class);
+                // 이 부분을 반드시 추가
 
         return http.build();
     }
