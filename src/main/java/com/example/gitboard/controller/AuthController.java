@@ -1,12 +1,13 @@
 package com.example.gitboard.controller;
 
-import com.example.gitboard.dto.LoginRequestDto;
-import com.example.gitboard.dto.LoginResponseDto;
-import com.example.gitboard.dto.SignupRequestDto;
+import com.example.gitboard.dto.*;
+import com.example.gitboard.entity.RefreshToken;
 import com.example.gitboard.entity.User;
+import com.example.gitboard.repository.RefreshTokenRepository;
 import com.example.gitboard.repository.UserRepository;
 import com.example.gitboard.security.JwtUtil;
 import com.example.gitboard.security.UserDetailsImpl;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +17,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -27,6 +27,7 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     @PostMapping("/signup")
     public String signup(@RequestBody @Valid SignupRequestDto requestDto) {
@@ -46,8 +47,39 @@ public class AuthController {
 
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         User user = userDetails.getUser(); // ⬅️ 수정된 부분
-        String token = jwtUtil.createToken(user.getUsername());
 
-        return ResponseEntity.ok(new LoginResponseDto(token));
+        String accessToken = jwtUtil.createToken(user.getUsername());
+        String refreshToken = jwtUtil.createRefreshToken(user.getUsername());
+
+        refreshTokenRepository.save(new RefreshToken(user.getUsername(), refreshToken));
+
+        return ResponseEntity.ok(new LoginResponseDto(accessToken, refreshToken));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<TokenResponseDto> refresh(@RequestBody @Valid RefreshRequestDto requestDto) {
+        String refreshToken = requestDto.getRefreshToken();
+
+        if (!jwtUtil.validateToken(refreshToken)) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        String username = jwtUtil.getUsernameFromToken(refreshToken);
+        RefreshToken stored = refreshTokenRepository.findById(username)
+                .orElseThrow(() -> new IllegalArgumentException("저장된 토큰 없음"));
+
+        if (!stored.getToken().equals(refreshToken)) {
+            return ResponseEntity.status(403).build(); // 불일치
+        }
+
+        String newAccessToken = jwtUtil.createToken(username);
+        return ResponseEntity.ok(new TokenResponseDto(newAccessToken));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@RequestBody @Valid RefreshRequestDto requestDto) {
+        String username = jwtUtil.getUsernameFromToken(requestDto.getRefreshToken());
+        refreshTokenRepository.deleteById(username);
+        return ResponseEntity.ok().build();
     }
 }
