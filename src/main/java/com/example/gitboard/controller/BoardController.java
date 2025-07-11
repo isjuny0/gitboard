@@ -59,4 +59,11 @@ public class BoardController {
     public BoardResponseDto getBoard(@PathVariable Long id) {
         return boardService.findById(id);
     }
+
+    @Operation(summary = "내 게시글 목록 조회", description = "로그인된 사용자가 작성한 게시글을 반환합니다.")
+    @GetMapping("/my")
+    public List<BoardResponseDto> getMyBoards(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        User user = userDetails.getUser();
+        return boardService.findMyBoards(user);
+    }
 }

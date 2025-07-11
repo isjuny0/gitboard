@@ -2,6 +2,7 @@ package com.example.gitboard.controller;
 
 import com.example.gitboard.dto.LoginRequestDto;
 import com.example.gitboard.dto.LoginResponseDto;
+import com.example.gitboard.dto.SignupRequestDto;
 import com.example.gitboard.entity.User;
 import com.example.gitboard.repository.UserRepository;
 import com.example.gitboard.security.JwtUtil;
@@ -26,6 +27,16 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
+
+    @PostMapping("/signup")
+    public String signup(@RequestBody @Valid SignupRequestDto requestDto) {
+        String encodedPassword = passwordEncoder.encode(requestDto.getPassword());
+        String role = "ROLE_" + requestDto.getRole().toUpperCase(); // ROLE_USER or ROLE_ADMIN
+
+        User user = new User(requestDto.getUsername(), encodedPassword, role);
+        userRepository.save(user);
+        return "회원가입 완료";
+    }
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDto> login(@RequestBody @Valid LoginRequestDto requestDto) {
