@@ -4,10 +4,12 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "users") // 예약어 피하기 위해 복수형 또는 다른 이름으로 지정
 @Getter
+@Setter
 @NoArgsConstructor
 public class User {
 
