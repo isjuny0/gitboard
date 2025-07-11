@@ -22,4 +22,8 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(userUpdateRequestDto.getNewPassword()));
         userRepository.save(user);
     }
+
+    public void deleteUser(User user) {
+        userRepository.delete(user);
+    }
 }
