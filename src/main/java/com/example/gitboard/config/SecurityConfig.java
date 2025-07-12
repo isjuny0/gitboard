@@ -2,7 +2,9 @@ package com.example.gitboard.config;
 
 import com.example.gitboard.security.JwtAuthenticationFilter;
 import com.example.gitboard.security.JwtUtil;
+import com.example.gitboard.security.OAuth2SuccessHandler;
 import com.example.gitboard.security.UserDetailsServiceImpl;
+import com.example.gitboard.service.CustomOAuth2UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,7 +39,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, CustomOAuth2UserService customOAuth2UserService, OAuth2SuccessHandler oAuth2SuccessHandler) throws Exception {
         http
                 .csrf().disable()
                 .sessionManagement()
@@ -54,10 +56,16 @@ public class SecurityConfig {
                                 "/signup",
                                 "/login",
                                 "logout",
-                                "refresh"
+                                "refresh",
+                                "/oauth-success"
                         ).permitAll()
                         .anyRequest().authenticated()
-                ).addFilterBefore(new JwtAuthenticationFilter(jwtUtil, userDetailsService), UsernamePasswordAuthenticationFilter.class);
+                )
+                .oauth2Login(oauth2 -> oauth2
+                        .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+                        .successHandler(oAuth2SuccessHandler)
+                )
+                .addFilterBefore(new JwtAuthenticationFilter(jwtUtil, userDetailsService), UsernamePasswordAuthenticationFilter.class);
                 // 이 부분을 반드시 추가
 
         return http.build();
