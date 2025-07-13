@@ -46,12 +46,20 @@ public class AuthController {
         );
 
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        User user = userDetails.getUser(); // ⬅️ 수정된 부분
+        User user = userDetails.getUser();
 
         String accessToken = jwtUtil.createToken(user.getUsername());
         String refreshToken = jwtUtil.createRefreshToken(user.getUsername());
 
-        refreshTokenRepository.save(new RefreshToken(user.getUsername(), refreshToken));
+        // 🔄 기존 토큰 존재 시 업데이트
+        RefreshToken savedToken = refreshTokenRepository.findById(user.getUsername())
+                .map(entity -> {
+                    entity.updateToken(refreshToken);
+                    return entity;
+                })
+                .orElse(new RefreshToken(user.getUsername(), refreshToken));
+
+        refreshTokenRepository.save(savedToken);
 
         return ResponseEntity.ok(new LoginResponseDto(accessToken, refreshToken));
     }
