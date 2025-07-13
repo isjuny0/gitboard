@@ -7,6 +7,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Getter
 @NoArgsConstructor
@@ -16,10 +18,12 @@ public class RefreshToken {
     @Id
     private String username;
 
-    @Column(nullable = false)
     private String token;
 
-    public void updateToken(String token) {
+    private LocalDateTime expiresAt;
+
+    public void updateToken(String newToken, LocalDateTime newExpiresAt) {
         this.token = token;
+        this.expiresAt = newExpiresAt;
     }
 }

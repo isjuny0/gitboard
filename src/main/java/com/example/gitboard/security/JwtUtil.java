@@ -47,6 +47,15 @@ public class JwtUtil {
                 .compact();
     }
 
+    public Date getExpirationFromToken(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getExpiration();
+    }
+
     // 토큰에서 사용자명 추출
     public String getUsernameFromToken(String token) {
         return parseClaims(token).getSubject();
