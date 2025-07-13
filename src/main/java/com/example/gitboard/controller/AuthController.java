@@ -74,10 +74,10 @@ public class AuthController {
 
         String username = jwtUtil.getUsernameFromToken(refreshToken);
         RefreshToken stored = refreshTokenRepository.findById(username)
-                .orElseThrow(() -> new IllegalArgumentException("저장된 토큰 없음"));
+                .orElseThrow(() -> new IllegalArgumentException("저장된 리프레시 토큰이 없습니다. 다시 로그인해주세요."));
 
         if (!stored.getToken().equals(refreshToken)) {
-            return ResponseEntity.status(403).build(); // 불일치
+            return ResponseEntity.status(403).body(null); // 불일치
         }
 
         String newAccessToken = jwtUtil.createToken(username);
