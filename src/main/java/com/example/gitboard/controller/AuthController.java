@@ -85,9 +85,18 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@RequestBody @Valid RefreshRequestDto requestDto) {
-        String username = jwtUtil.getUsernameFromToken(requestDto.getRefreshToken());
-        refreshTokenRepository.deleteById(username);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<?> logout(@RequestBody @Valid RefreshRequestDto requestDto) {
+        String refreshToken = requestDto.getRefreshToken();
+
+        if (!jwtUtil.validateToken(refreshToken)) {
+            return ResponseEntity.badRequest().body("유효하지 않은 토큰");
+        }
+
+        String username = jwtUtil.getUsernameFromToken(refreshToken);
+        if (refreshTokenRepository.existsById(username)) {
+            refreshTokenRepository.deleteById(username);
+        }
+
+        return ResponseEntity.ok("로그아웃 완료");
     }
 }

@@ -1,8 +1,9 @@
 package com.example.gitboard.security;
 
+import com.example.gitboard.entity.RefreshToken;
 import com.example.gitboard.entity.User;
+import com.example.gitboard.repository.RefreshTokenRepository;
 import com.example.gitboard.repository.UserRepository;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -20,41 +21,42 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     private static final String FRONTEND_REDIRECT_URI = "http://localhost:8080/test.html";
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
-                                        Authentication authentication) throws IOException, ServletException {
+                                        Authentication authentication) throws IOException {
+
         DefaultOAuth2User oAuth2User = (DefaultOAuth2User) authentication.getPrincipal();
         String email = oAuth2User.getAttribute("email");
 
         if (email == null) {
-            System.err.println("OAuth2SuccessHandler: OAuth2 Principal에서 이메일을 찾을 수 없습니다.");
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "OAuth2 Principal에서 이메일을 찾을 수 없습니다.");
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "OAuth2 사용자 이메일이 없습니다.");
             return;
         }
 
-        // 🟡 사용자 저장 책임을 이곳으로 이동
         User user = userRepository.findByUsername(email)
-                .orElseGet(() -> {
-                    User newUser = new User(email, "", "ROLE_USER");
-                    User savedUser = userRepository.saveAndFlush(newUser); // 즉시 DB 반영
-                    System.out.println("OAuth2SuccessHandler: 사용자 새로 저장됨 → ID: " + savedUser.getId());
-                    return savedUser;
-                });
+                .orElseGet(() -> userRepository.saveAndFlush(new User(email, "", "ROLE_USER")));
 
-        System.out.println("OAuth2SuccessHandler: JWT 발급을 위한 이메일: " + email);
-
+        // JWT 발급
         String accessToken = jwtUtil.createToken(email);
         String refreshToken = jwtUtil.createRefreshToken(email);
 
+        // 🔄 RefreshToken 저장 or 갱신
+        refreshTokenRepository.findById(email)
+                .ifPresentOrElse(
+                        token -> token.updateToken(refreshToken),
+                        () -> refreshTokenRepository.save(new RefreshToken(email, refreshToken))
+                );
+
+        // 리디렉션 URL
         String targetUrl = UriComponentsBuilder.fromUriString(FRONTEND_REDIRECT_URI)
                 .queryParam("accessToken", accessToken)
                 .queryParam("refreshToken", refreshToken)
                 .build().toUriString();
 
-        System.out.println("OAuth2SuccessHandler: 프론트엔드 리다이렉트 URL: " + targetUrl);
         response.sendRedirect(targetUrl);
     }
 }
