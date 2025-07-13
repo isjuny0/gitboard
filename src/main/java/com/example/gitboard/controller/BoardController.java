@@ -20,7 +20,7 @@ import java.util.List;
 @Tag(name = "게시판 API", description = "게시글 등록, 조회, 삭제 등 처리")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/boards")
+@RequestMapping("/api/boards")
 public class BoardController {
     private final BoardService boardService;
 

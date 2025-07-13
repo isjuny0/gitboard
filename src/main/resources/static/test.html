@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gitboard 게시판 테스트</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            background-color: #f4f7f9;
+            margin: 0;
+            min-height: 100vh;
+            box-sizing: border-box;
+            color: #333;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 2rem 3rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            max-width: 900px; /* 너비 확장 */
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 2rem;
+        }
+        h1, h2 {
+            color: #2c3e50;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        button {
+            background-color: #4285f4; /* Google Blue */
+            color: #ffffff;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.2s ease-in-out;
+            margin: 0.5rem 0.25rem;
+        }
+        button:hover {
+            background-color: #357ae8;
+        }
+        button.delete-btn {
+            background-color: #e74c3c;
+        }
+        button.delete-btn:hover {
+            background-color: #c0392b;
+        }
+        button.edit-btn {
+            background-color: #f39c12;
+        }
+        button.edit-btn:hover {
+            background-color: #e67e22;
+        }
+        button.cancel-btn {
+            background-color: #95a5a6;
+        }
+        button.cancel-btn:hover {
+            background-color: #7f8c8d;
+        }
+        button.toggle-view-btn {
+            background-color: #28a745; /* Green for view toggle */
+        }
+        button.toggle-view-btn:hover {
+            background-color: #218838;
+        }
+
+        #auth-section, #board-section {
+            display: none; /* 초기에는 숨김 */
+        }
+        #auth-section {
+            text-align: center;
+        }
+        #board-section {
+            margin-top: 2rem;
+            border-top: 1px solid #e0e0e0;
+            padding-top: 2rem;
+        }
+
+        /* 게시글 목록 스타일 */
+        .post-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 1.5rem 0 0;
+        }
+        .post-item {
+            background-color: #f9f9f9;
+            border: 1px solid #eee;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .post-item strong {
+            color: #34495e;
+            font-size: 1.2em;
+            margin-bottom: 0.5rem;
+        }
+        .post-item p {
+            color: #555;
+            margin-bottom: 0.5rem;
+            line-height: 1.5;
+        }
+        .post-meta {
+            font-size: 0.85em;
+            color: #7f8c8d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .post-actions {
+            margin-top: 1rem;
+            text-align: right;
+        }
+
+        /* 폼 스타일 */
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #fcfcfc;
+        }
+        form label {
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+            color: #34495e;
+        }
+        form input[type="text"],
+        form textarea {
+            padding: 0.75rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+            width: calc(100% - 1.5rem); /* 패딩 고려 */
+        }
+        form textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        form button {
+            align-self: flex-end; /* 버튼을 오른쪽으로 정렬 */
+        }
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        #status-message, .message {
+            margin-bottom: 1rem;
+            color: #666;
+            font-size: 0.95rem;
+            text-align: center;
+        }
+        .error-message {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .success-message {
+            color: #27ae60;
+            font-weight: bold;
+        }
+
+        /* 수정 폼 숨기기/보이기 */
+        .edit-form-container {
+            display: none;
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: #f0f8ff; /* 연한 파란색 배경 */
+            border: 1px solid #a8d9ff;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Gitboard 게시판 테스트</h1>
+    <div id="auth-section">
+        <p id="status-message">Google 로그인이 필요합니다.</p>
+        <button id="google-login-btn">Google로 로그인</button>
+    </div>
+
+    <div id="board-section">
+        <h2>게시글 목록</h2>
+        <div style="text-align: center; margin-bottom: 1rem;">
+            <button id="refresh-boards-btn">전체 게시글 새로고침</button>
+            <button id="toggle-my-boards-btn" class="toggle-view-btn">내 게시글만 보기</button>
+        </div>
+        <p id="board-list-message" class="message"></p>
+        <ul id="boards-container" class="post-list"></ul>
+
+        <h2 style="margin-top: 3rem;">새 게시글 작성</h2>
+        <form id="create-board-form">
+            <label for="create-title">제목:</label>
+            <input type="text" id="create-title" required>
+
+            <label for="create-content">내용:</label>
+            <textarea id="create-content" required></textarea>
+
+            <div class="form-actions">
+                <button type="submit">게시글 등록</button>
+            </div>
+            <p id="create-message" class="message"></p>
+        </form>
+
+        <div id="edit-board-section" class="edit-form-container">
+            <h2>게시글 수정</h2>
+            <form id="edit-board-form">
+                <input type="hidden" id="edit-board-id">
+                <label for="edit-title">제목:</label>
+                <input type="text" id="edit-title" required>
+
+                <label for="edit-content">내용:</label>
+                <textarea id="edit-content" required></textarea>
+
+                <div class="form-actions">
+                    <button type="submit">수정 완료</button>
+                    <button type="button" id="cancel-edit-btn" class="cancel-btn">취소</button>
+                </div>
+                <p id="edit-message" class="message"></p>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 백엔드 API의 기본 URL을 설정합니다.
+    const API_BASE_URL = 'http://localhost:8080';
+    // 백엔드의 구글 OAuth2 인증 시작 URL을 여기에 정확히 입력하세요.
+    const GOOGLE_AUTH_URL = `${API_BASE_URL}/oauth2/authorization/google`;
+
+    // HTML 요소들을 가져옵니다.
+    const authSection = document.getElementById('auth-section');
+    const boardSection = document.getElementById('board-section');
+    const statusMessage = document.getElementById('status-message');
+    const googleLoginBtn = document.getElementById('google-login-btn');
+
+    const boardListMessage = document.getElementById('board-list-message'); // 메시지 엘리먼트 ID 변경
+    const boardsContainer = document.getElementById('boards-container'); // 컨테이너 ID 변경
+    const refreshBoardsBtn = document.getElementById('refresh-boards-btn'); // 버튼 ID 변경
+    const toggleMyBoardsBtn = document.getElementById('toggle-my-boards-btn'); // 추가된 버튼
+
+    const createBoardForm = document.getElementById('create-board-form'); // 폼 ID 변경
+    const createTitleInput = document.getElementById('create-title');
+    const createContentInput = document.getElementById('create-content');
+    const createMessage = document.getElementById('create-message');
+
+    const editBoardSection = document.getElementById('edit-board-section'); // 섹션 ID 변경
+    const editBoardForm = document.getElementById('edit-board-form'); // 폼 ID 변경
+    const editBoardIdInput = document.getElementById('edit-board-id'); // ID 변경
+    const editTitleInput = document.getElementById('edit-title');
+    const editContentInput = document.getElementById('edit-content');
+    const editMessage = document.getElementById('edit-message');
+    const cancelEditBtn = document.getElementById('cancel-edit-btn');
+
+    let isMyBoardsView = false; // 내 게시글만 보기 모드인지 추적
+
+    // 메시지를 표시하고 일정 시간 후 지우는 유틸리티 함수
+    function showMessage(element, msg, type = 'info') {
+        element.textContent = msg;
+        element.className = `message ${type}-message`;
+        setTimeout(() => {
+            element.textContent = '';
+            element.className = 'message';
+        }, 3000);
+    }
+
+    // URL에서 토큰을 가져오거나 localStorage에서 토큰을 가져오는 함수
+    function getAuthTokens() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const accessToken = urlParams.get('accessToken');
+        const refreshToken = urlParams.get('refreshToken');
+
+        // URL에 토큰이 있다면 localStorage에 저장하고, URL에서 토큰 정보를 제거합니다.
+        if (accessToken && refreshToken) {
+            localStorage.setItem('accessToken', accessToken);
+            localStorage.setItem('refreshToken', refreshToken);
+            // 브라우저 히스토리 스택을 조작하여 URL에서 쿼리 파라미터를 제거합니다.
+            window.history.replaceState({}, document.title, window.location.pathname);
+            return { accessToken, refreshToken };
+        }
+        // URL에 토큰이 없다면 localStorage에서 토큰을 가져옵니다.
+        return {
+            accessToken: localStorage.getItem('accessToken'),
+            refreshToken: localStorage.getItem('refreshToken')
+        };
+    }
+
+    // 게시글 목록을 가져와서 화면에 표시하는 함수 (전체 또는 내 게시글)
+    async function fetchBoards(myBoardsOnly = false) {
+        const { accessToken } = getAuthTokens();
+        if (!accessToken) {
+            showMessage(boardListMessage, '인증 토큰이 없습니다. 로그인해주세요.', 'error');
+            return;
+        }
+
+        showMessage(boardListMessage, '게시글을 불러오는 중...', 'info');
+        boardsContainer.innerHTML = ''; // 기존 게시글 목록 초기화
+
+        const url = myBoardsOnly ? `${API_BASE_URL}/api/boards/my` : `${API_BASE_URL}/api/boards`;
+
+        try {
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
+
+            if (response.ok) { // 응답이 성공적 (HTTP 200-299)일 경우
+                const boards = await response.json();
+                if (boards.length === 0) {
+                    showMessage(boardListMessage, myBoardsOnly ? '작성한 게시글이 없습니다.' : '작성된 게시글이 없습니다.', 'info');
+                } else {
+                    boards.forEach(board => {
+                        const li = document.createElement('li');
+                        li.className = 'post-item';
+                        // BoardResponseDto 필드명에 맞게 수정: id, title, content, author, createdAt
+                        li.innerHTML = `
+                                <strong>${board.title || '제목 없음'}</strong>
+                                <p>${board.content || '내용 없음'}</p>
+                                <div class="post-meta">
+                                    <span>작성자: ${board.author || '알 수 없음'}</span>
+                                    <span>작성일: ${new Date(board.createdAt).toLocaleString() || 'N/A'}</span>
+                                </div>
+                                <div class="post-actions">
+                                    <button class="edit-btn" data-id="${board.id}" data-title="${board.title}" data-content="${board.content}">수정</button>
+                                    <button class="delete-btn" data-id="${board.id}">삭제</button>
+                                </div>
+                            `;
+                        boardsContainer.appendChild(li);
+                    });
+                    showMessage(boardListMessage, '', 'info'); // 성공 시 메시지 지움
+                }
+            } else if (response.status === 401) { // 인증 실패 (토큰 만료 등)
+                showMessage(boardListMessage, '토큰이 만료되었거나 유효하지 않습니다. 다시 로그인해주세요.', 'error');
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('refreshToken');
+                updateUI(); // UI를 로그인 상태로 업데이트
+            } else { // 그 외 API 호출 실패
+                const errorData = await response.json().catch(() => ({})); // JSON 파싱 실패 대비
+                showMessage(boardListMessage, `게시글 불러오기 실패: ${errorData.message || response.statusText}`, 'error');
+            }
+        } catch (error) { // 네트워크 오류 등
+            showMessage(boardListMessage, `네트워크 오류: ${error.message}`, 'error');
+            console.error('게시글 불러오기 중 오류 발생:', error);
+        }
+    }
+
+    // 새 게시글 등록 함수
+    createBoardForm.addEventListener('submit', async (e) => {
+        e.preventDefault(); // 폼 기본 제출 동작 방지
+
+        const { accessToken } = getAuthTokens();
+        if (!accessToken) {
+            showMessage(createMessage, '인증 토큰이 없습니다. 로그인해주세요.', 'error');
+            return;
+        }
+
+        const title = createTitleInput.value;
+        const content = createContentInput.value;
+
+        if (!title || !content) {
+            showMessage(createMessage, '제목과 내용을 모두 입력해주세요.', 'error');
+            return;
+        }
+
+        showMessage(createMessage, '게시글 등록 중...', 'info');
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/boards`, { // API 경로 변경
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({ title, content })
+            });
+
+            if (response.ok) {
+                showMessage(createMessage, '게시글이 성공적으로 등록되었습니다!', 'success');
+                createTitleInput.value = ''; // 입력 필드 초기화
+                createContentInput.value = '';
+                fetchBoards(isMyBoardsView); // 현재 뷰 모드에 맞춰 게시글 목록 새로고침
+            } else if (response.status === 401) {
+                showMessage(createMessage, '토큰이 만료되었거나 유효하지 않습니다. 다시 로그인해주세요.', 'error');
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('refreshToken');
+                updateUI();
+            } else {
+                const errorData = await response.json().catch(() => ({}));
+                showMessage(createMessage, `게시글 등록 실패: ${errorData.message || response.statusText}`, 'error');
+            }
+        } catch (error) {
+            showMessage(createMessage, `네트워크 오류: ${error.message}`, 'error');
+            console.error('게시글 등록 중 오류 발생:', error);
+        }
+    });
+
+    // 게시글 수정 폼 표시 및 데이터 채우기
+    boardsContainer.addEventListener('click', (e) => {
+        if (e.target.classList.contains('edit-btn')) {
+            const boardId = e.target.dataset.id;
+            const boardTitle = e.target.dataset.title;
+            const boardContent = e.target.dataset.content;
+
+            editBoardIdInput.value = boardId;
+            editTitleInput.value = boardTitle;
+            editContentInput.value = boardContent;
+            editBoardSection.style.display = 'block'; // 수정 폼 보이기
+            editMessage.textContent = ''; // 이전 메시지 지우기
+            window.scrollTo({ top: editBoardSection.offsetTop, behavior: 'smooth' }); // 수정 폼으로 스크롤
+        }
+    });
+
+    // 게시글 수정 완료 함수
+    editBoardForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const { accessToken } = getAuthTokens();
+        if (!accessToken) {
+            showMessage(editMessage, '인증 토큰이 없습니다. 로그인해주세요.', 'error');
+            return;
+        }
+
+        const boardId = editBoardIdInput.value;
+        const title = editTitleInput.value;
+        const content = editContentInput.value;
+
+        if (!title || !content) {
+            showMessage(editMessage, '제목과 내용을 모두 입력해주세요.', 'error');
+            return;
+        }
+
+        showMessage(editMessage, '게시글 수정 중...', 'info');
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/boards/${boardId}`, { // API 경로 변경
+                method: 'PUT', // BoardController에 PUT으로 되어있음
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({ title, content })
+            });
+
+            if (response.ok) {
+                showMessage(editMessage, '게시글이 성공적으로 수정되었습니다!', 'success');
+                editBoardSection.style.display = 'none'; // 수정 폼 숨기기
+                fetchBoards(isMyBoardsView); // 현재 뷰 모드에 맞춰 게시글 목록 새로고침
+            } else if (response.status === 401) {
+                showMessage(editMessage, '토큰이 만료되었거나 유효하지 않습니다. 다시 로그인해주세요.', 'error');
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('refreshToken');
+                updateUI();
+            } else {
+                const errorData = await response.json().catch(() => ({}));
+                showMessage(editMessage, `게시글 수정 실패: ${errorData.message || response.statusText}`, 'error');
+            }
+        } catch (error) {
+            showMessage(editMessage, `네트워크 오류: ${error.message}`, 'error');
+            console.error('게시글 수정 중 오류 발생:', error);
+        }
+    });
+
+    // 수정 취소 버튼
+    cancelEditBtn.addEventListener('click', () => {
+        editBoardSection.style.display = 'none'; // 수정 폼 숨기기
+        editMessage.textContent = ''; // 메시지 지우기
+    });
+
+    // 게시글 삭제 함수
+    boardsContainer.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('delete-btn')) {
+            const boardId = e.target.dataset.id;
+            if (!confirm('정말로 이 게시글을 삭제하시겠습니까?')) { // 사용자 확인
+                return;
+            }
+
+            const { accessToken } = getAuthTokens();
+            if (!accessToken) {
+                showMessage(boardListMessage, '인증 토큰이 없습니다. 로그인해주세요.', 'error');
+                return;
+            }
+
+            showMessage(boardListMessage, '게시글 삭제 중...', 'info');
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/boards/${boardId}`, { // API 경로 변경
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+
+                if (response.ok) { // DELETE는 보통 204 No Content 또는 200 OK
+                    showMessage(boardListMessage, '게시글이 성공적으로 삭제되었습니다!', 'success');
+                    fetchBoards(isMyBoardsView); // 현재 뷰 모드에 맞춰 게시글 목록 새로고침
+                } else if (response.status === 401) {
+                    showMessage(boardListMessage, '토큰이 만료되었거나 유효하지 않습니다. 다시 로그인해주세요.', 'error');
+                    localStorage.removeItem('accessToken');
+                    localStorage.removeItem('refreshToken');
+                    updateUI();
+                } else {
+                    // DELETE 요청은 응답 바디가 없을 수 있으므로 JSON 파싱 오류 방지
+                    const errorText = await response.text();
+                    let errorMessage = response.statusText;
+                    try {
+                        const errorData = JSON.parse(errorText);
+                        errorMessage = errorData.message || errorMessage;
+                    } catch (e) { /* ignore */ }
+                    showMessage(boardListMessage, `게시글 삭제 실패: ${errorMessage}`, 'error');
+                }
+            } catch (error) {
+                showMessage(boardListMessage, `네트워크 오류: ${error.message}`, 'error');
+                console.error('게시글 삭제 중 오류 발생:', error);
+            }
+        }
+    });
+
+    // '내 게시글만 보기' 토글 버튼 이벤트
+    toggleMyBoardsBtn.addEventListener('click', () => {
+        isMyBoardsView = !isMyBoardsView; // 상태 토글
+        if (isMyBoardsView) {
+            toggleMyBoardsBtn.textContent = '전체 게시글 보기';
+            showMessage(boardListMessage, '내 게시글만 불러오는 중...', 'info');
+        } else {
+            toggleMyBoardsBtn.textContent = '내 게시글만 보기';
+            showMessage(boardListMessage, '전체 게시글 불러오는 중...', 'info');
+        }
+        fetchBoards(isMyBoardsView); // 변경된 뷰 모드로 게시글 불러오기
+    });
+
+
+    // 현재 인증 상태에 따라 UI를 업데이트하는 함수
+    function updateUI() {
+        const { accessToken } = getAuthTokens();
+        if (accessToken) {
+            authSection.style.display = 'none'; // 로그인 섹션 숨기기
+            boardSection.style.display = 'block'; // 게시판 섹션 표시
+            statusMessage.textContent = '로그인 되었습니다.';
+            fetchBoards(isMyBoardsView); // 로그인 후 게시글 목록 자동 로드 (현재 뷰 모드 유지)
+        } else {
+            authSection.style.display = 'block'; // 로그인 섹션 표시
+            boardSection.style.display = 'none'; // 게시판 섹션 숨기기
+            statusMessage.textContent = 'Google 로그인이 필요합니다.';
+            boardsContainer.innerHTML = ''; // 게시글 목록 초기화
+            createTitleInput.value = '';
+            createContentInput.value = '';
+            editBoardSection.style.display = 'none'; // 수정 폼 숨기기
+            isMyBoardsView = false; // 로그아웃 시 내 게시글 보기 모드 초기화
+            toggleMyBoardsBtn.textContent = '내 게시글만 보기'; // 버튼 텍스트 초기화
+        }
+    }
+
+    // 이벤트 리스너 설정
+    googleLoginBtn.addEventListener('click', () => {
+        window.location.href = GOOGLE_AUTH_URL; // Google OAuth2 인증 시작 URL로 리다이렉트
+    });
+
+    refreshBoardsBtn.addEventListener('click', () => fetchBoards(isMyBoardsView)); // '게시글 새로고침' 버튼 클릭 시 (현재 뷰 모드 유지)
+
+    // 페이지 로드 시 초기 UI 설정 및 토큰이 있다면 바로 API 호출
+    document.addEventListener('DOMContentLoaded', () => {
+        updateUI(); // UI 업데이트
+    });
+</script>
+</body>
+</html>

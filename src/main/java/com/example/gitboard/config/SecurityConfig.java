@@ -42,6 +42,8 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http, CustomOAuth2UserService customOAuth2UserService, OAuth2SuccessHandler oAuth2SuccessHandler) throws Exception {
         http
                 .csrf().disable()
+                .headers().frameOptions().disable() // H2 Console이 iframe으로 동작하도록 허용
+                .and()
                 .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // 세션 사용x
                 .and()
@@ -55,9 +57,9 @@ public class SecurityConfig {
                                 "/swagger-resources/**",
                                 "/signup",
                                 "/login",
-                                "logout",
-                                "refresh",
-                                "/oauth-success"
+                                "/logout",
+                                "/refresh",
+                                "/test.html"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
