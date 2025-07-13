@@ -46,12 +46,20 @@ public class AuthController {
         );
 
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        User user = userDetails.getUser(); // ⬅️ 수정된 부분
+        User user = userDetails.getUser();
 
         String accessToken = jwtUtil.createToken(user.getUsername());
         String refreshToken = jwtUtil.createRefreshToken(user.getUsername());
 
-        refreshTokenRepository.save(new RefreshToken(user.getUsername(), refreshToken));
+        // 🔄 기존 토큰 존재 시 업데이트
+        RefreshToken savedToken = refreshTokenRepository.findById(user.getUsername())
+                .map(entity -> {
+                    entity.updateToken(refreshToken);
+                    return entity;
+                })
+                .orElse(new RefreshToken(user.getUsername(), refreshToken));
+
+        refreshTokenRepository.save(savedToken);
 
         return ResponseEntity.ok(new LoginResponseDto(accessToken, refreshToken));
     }
@@ -66,10 +74,10 @@ public class AuthController {
 
         String username = jwtUtil.getUsernameFromToken(refreshToken);
         RefreshToken stored = refreshTokenRepository.findById(username)
-                .orElseThrow(() -> new IllegalArgumentException("저장된 토큰 없음"));
+                .orElseThrow(() -> new IllegalArgumentException("저장된 리프레시 토큰이 없습니다. 다시 로그인해주세요."));
 
         if (!stored.getToken().equals(refreshToken)) {
-            return ResponseEntity.status(403).build(); // 불일치
+            return ResponseEntity.status(403).body(null); // 불일치
         }
 
         String newAccessToken = jwtUtil.createToken(username);
@@ -77,9 +85,18 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@RequestBody @Valid RefreshRequestDto requestDto) {
-        String username = jwtUtil.getUsernameFromToken(requestDto.getRefreshToken());
-        refreshTokenRepository.deleteById(username);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<?> logout(@RequestBody @Valid RefreshRequestDto requestDto) {
+        String refreshToken = requestDto.getRefreshToken();
+
+        if (!jwtUtil.validateToken(refreshToken)) {
+            return ResponseEntity.badRequest().body("유효하지 않은 토큰");
+        }
+
+        String username = jwtUtil.getUsernameFromToken(refreshToken);
+        if (refreshTokenRepository.existsById(username)) {
+            refreshTokenRepository.deleteById(username);
+        }
+
+        return ResponseEntity.ok("로그아웃 완료");
     }
 }
