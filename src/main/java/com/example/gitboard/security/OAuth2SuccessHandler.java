@@ -14,6 +14,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Component
 @RequiredArgsConstructor
@@ -44,11 +46,15 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         String accessToken = jwtUtil.createToken(email);
         String refreshToken = jwtUtil.createRefreshToken(email);
 
+        LocalDateTime expiresAt = jwtUtil.getExpirationFromToken(refreshToken).toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime();
+
         // 🔄 RefreshToken 저장 or 갱신
         refreshTokenRepository.findById(email)
                 .ifPresentOrElse(
-                        token -> token.updateToken(refreshToken),
-                        () -> refreshTokenRepository.save(new RefreshToken(email, refreshToken))
+                        token -> token.updateToken(refreshToken, expiresAt),
+                        () -> refreshTokenRepository.save(new RefreshToken(email, refreshToken, expiresAt))
                 );
 
         // 리디렉션 URL
